@@ -1,0 +1,107 @@
+import tkinter as tk
+from tkinter import messagebox, ttk, PhotoImage
+import psycopg2
+
+def connect_to_db():
+try:
+conn = psycopg2.connect(
+dbname='demoexam',
+user='demo034',
+password='f8219c71',
+host='10.22.24.252',
+port='5432'
+)
+return conn
+except Exception as e:
+messagebox.showerror('Ошибка подключения', str(e))
+return None
+
+def login():
+username = entry_username.get()
+password = entry_password.get()
+conn = connect_to_db()
+if conn:
+try:
+cursor = conn.cursor()
+cursor.execute('SELECT * FROM demo034."User" WHERE userlogin=%s AND userpassword=%s',
+(username, password))
+user = cursor.fetchone()
+if user:
+messagebox.showinfo('Авторизация', 'Вход выполнен!')
+main_window(user)
+cursor.close()
+conn.close()
+else:
+messagebox.showerror('Авторизация', 'Неверный логин или пароль')
+cursor.close()
+conn.close()
+except Exception as e:
+messagebox.showerror('Ошибка подключения', str(e))
+return None
+
+def main_window(user):
+root.destroy()
+main_window1 = tk.Tk()
+main_window1.iconbitmap('icon.ico')
+main_window1.title('Каталог')
+main_window1.configure(bg='white')
+main_window1.geometry(calculate_pos_main(800, 600, main_window1))
+role = user[-1]
+if user == "Гость":
+tk.Label(main_window1, text=f"Гость", anchor='ne', bg='white').pack(side=tk.TOP, anchor='e')
+else:
+tk.Label(main_window1, text=f"{user[1]} {user[2]} {user[3]}", anchor='ne', bg='white').pack(side=tk.TOP, anchor='e')
+if role == 1:
+tk.Label(main_window1, text="Просмотр каталога", bg='white').pack()
+main_window1.title('Каталог (Клиент)')
+elif role == 2:
+main_window1.title('Каталог (Менеджер)')
+tk.Label(main_window1, text="Просмотр каталога", bg='white').pack()
+elif role == 3:
+main_window1.title('Каталог (Администратор)')
+tk.Label(main_window1, text="Добавление, удаление и редактирование каталога", bg='white').pack()
+main_window1.mainloop()
+
+def calculate_pos_root(width, height):
+window_height = height
+window_width = width
+screen_height = root.winfo_screenheight()
+screen_width = root.winfo_screenwidth()
+p1 = int(screen_height / 2 - window_height / 2)
+p2 = int(screen_width / 2 - window_width / 2)
+return f'{window_width}x{window_height}+{p2}+{p1}'
+
+def calculate_pos_main(width, height, main_window1):
+window_height = height
+window_width = width
+screen_height = main_window1.winfo_screenheight()
+screen_width = main_window1.winfo_screenwidth()
+p1 = int(screen_height / 2 - window_height / 2)
+p2 = int(screen_width / 2 - window_width / 2)
+return f'{window_width}x{window_height}+{p2}+{p1}'
+
+def guest_login():
+main_window('Гость')
+
+# icon = PhotoImage(file='icon.ico')
+root = tk.Tk()
+root.iconbitmap('icon.ico')
+root.title('Авторизация ООО Рыбалка')
+root.configure()
+root.geometry(calculate_pos_root(350, 200))
+st = ttk.Style
+frame = ttk.Frame(root, padding="10")
+frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+tk.Label(
+frame, text="Логин"
+).grid(row=0, pady=5)
+tk.Label(
+frame, text="Пароль"
+).grid(row=1, pady=5)
+entry_username = tk.Entry(frame, width=40)
+entry_password = tk.Entry(frame, width=40, show="*")
+entry_username.grid(row=0, column=1)
+entry_password.grid(row=1, column=1)
+tk.Button(frame, text='Войти', command=login).grid(row=2, column=1, pady=10)
+tk.Button(frame, text='Войти как гость', command=guest_login).grid(row=3, column=1, pady=10)
+root.mainloop()
